@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# 환경변수 (절대 Git에 올리지 말 것!)
+.env
+*.pem
+*.key
+
+# DB 파일
+*.db
+*.sqlite
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp

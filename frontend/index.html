@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo App — DevOps 실습</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', -apple-system, sans-serif;
+      background: #f0f4fa;
+      color: #1e293b;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+
+    header {
+      background: #1e40af;
+      color: white;
+      padding: 1.25rem 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.3rem; }
+    header span { font-size: 0.85rem; opacity: 0.7; }
+
+    .add-form {
+      background: white;
+      padding: 1.25rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .add-form h2 { font-size: 1rem; margin-bottom: 0.75rem; color: #374151; }
+    .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      outline: 2px solid #3b82f6;
+      border-color: #3b82f6;
+    }
+    textarea { resize: vertical; min-height: 60px; }
+    select { width: auto; }
+    button.btn-add {
+      background: #1e40af;
+      color: white;
+      border: none;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    button.btn-add:hover { background: #1d4ed8; }
+
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+    .filter-btn {
+      padding: 0.35rem 0.9rem;
+      border: 1px solid #d1d5db;
+      border-radius: 20px;
+      background: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+    .filter-btn.active {
+      background: #1e40af;
+      color: white;
+      border-color: #1e40af;
+    }
+
+    .todo-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .todo-item {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      transition: opacity .2s;
+    }
+    .todo-item.completed { opacity: 0.55; }
+    .todo-item.completed .todo-title { text-decoration: line-through; color: #9ca3af; }
+
+    .todo-check {
+      width: 20px; height: 20px;
+      border: 2px solid #d1d5db;
+      border-radius: 50%;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .todo-check.done { background: #22c55e; border-color: #22c55e; }
+    .todo-check.done::after { content: '✓'; color: white; font-size: 12px; }
+
+    .todo-body { flex: 1; min-width: 0; }
+    .todo-title { font-size: 0.95rem; font-weight: 500; margin-bottom: 2px; }
+    .todo-desc  { font-size: 0.82rem; color: #6b7280; margin-bottom: 4px; }
+    .todo-meta  { display: flex; gap: 8px; align-items: center; }
+
+    .priority-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 1px 8px;
+      border-radius: 10px;
+    }
+    .p1 { background: #f1f5f9; color: #64748b; }
+    .p2 { background: #dcfce7; color: #15803d; }
+    .p3 { background: #fef9c3; color: #a16207; }
+    .p4 { background: #fed7aa; color: #c2410c; }
+    .p5 { background: #fecaca; color: #b91c1c; }
+
+    .todo-date { font-size: 0.72rem; color: #9ca3af; }
+
+    .btn-del {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px 4px;
+      border-radius: 4px;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+    .btn-del:hover { opacity: 1; background: #fee2e2; }
+
+    .empty-msg {
+      text-align: center;
+      color: #9ca3af;
+      padding: 2rem;
+      font-size: 0.9rem;
+    }
+    .stats {
+      font-size: 0.82rem;
+      color: #6b7280;
+      margin-bottom: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>📋 Todo App</h1>
+    <span>DevOps 입문 실습</span>
+  </header>
+
+  <!-- 추가 폼 -->
+  <div class="add-form">
+    <h2>할일 추가</h2>
+    <div class="form-row">
+      <input type="text" id="inp-title" placeholder="할일 제목 입력..." />
+      <select id="inp-priority">
+        <option value="1">낮음 (1)</option>
+        <option value="2">보통 (2)</option>
+        <option value="3" selected>중간 (3)</option>
+        <option value="4">높음 (4)</option>
+        <option value="5">긴급 (5)</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <textarea id="inp-desc" placeholder="설명 (선택)"></textarea>
+      <button class="btn-add" onclick="addTodo()">추가</button>
+    </div>
+  </div>
+
+  <!-- 필터 -->
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('all', this)">전체</button>
+    <button class="filter-btn" onclick="setFilter('active', this)">미완료</button>
+    <button class="filter-btn" onclick="setFilter('done', this)">완료</button>
+  </div>
+  <p class="stats" id="stats"></p>
+
+  <!-- 목록 -->
+  <div class="todo-list" id="todo-list"></div>
+</div>
+
+<script>
+  const API = '/todos';   // 같은 서버(포트 8000)의 API
+  let currentFilter = 'all';
+
+  async function fetchTodos() {
+    try {
+      const params = currentFilter === 'done'   ? '?completed=true'
+                   : currentFilter === 'active' ? '?completed=false'
+                   : '';
+      const res = await fetch(API + params);
+      const todos = await res.json();
+      renderTodos(todos);
+    } catch (e) {
+      document.getElementById('todo-list').innerHTML =
+        '<p class="empty-msg">❌ API 서버에 연결할 수 없습니다.<br>백엔드 서버가 실행 중인지 확인하세요.</p>';
+    }
+  }
+
+  function renderTodos(todos) {
+    const list = document.getElementById('todo-list');
+    const stats = document.getElementById('stats');
+
+    const total = todos.length;
+    const done  = todos.filter(t => t.completed).length;
+    stats.textContent = total ? `전체 ${total}개 · 완료 ${done}개 · 미완료 ${total - done}개` : '';
+
+    if (!todos.length) {
+      list.innerHTML = '<p class="empty-msg">할일이 없습니다. 추가해 보세요!</p>';
+      return;
+    }
+
+    list.innerHTML = todos.map(todo => `
+      <div class="todo-item ${todo.completed ? 'completed' : ''}" id="todo-${todo.id}">
+        <div class="todo-check ${todo.completed ? 'done' : ''}"
+             onclick="toggleComplete(${todo.id}, ${todo.completed})"></div>
+        <div class="todo-body">
+          <div class="todo-title">${escapeHtml(todo.title)}</div>
+          ${todo.description ? `<div class="todo-desc">${escapeHtml(todo.description)}</div>` : ''}
+          <div class="todo-meta">
+            <span class="priority-badge p${todo.priority}">
+              ${'★'.repeat(todo.priority)} 우선순위 ${todo.priority}
+            </span>
+            <span class="todo-date">${formatDate(todo.created_at)}</span>
+          </div>
+        </div>
+        <button class="btn-del" onclick="deleteTodo(${todo.id})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  async function addTodo() {
+    const title = document.getElementById('inp-title').value.trim();
+    const desc  = document.getElementById('inp-desc').value.trim();
+    const prio  = parseInt(document.getElementById('inp-priority').value);
+
+    if (!title) { alert('제목을 입력해주세요.'); return; }
+
+    await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description: desc || null, priority: prio })
+    });
+
+    document.getElementById('inp-title').value = '';
+    document.getElementById('inp-desc').value  = '';
+    fetchTodos();
+  }
+
+  async function toggleComplete(id, current) {
+    if (!current) {
+      await fetch(`${API}/${id}/complete`, { method: 'PATCH' });
+    } else {
+      await fetch(`${API}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: false })
+      });
+    }
+    fetchTodos();
+  }
+
+  async function deleteTodo(id) {
+    if (!confirm('삭제하시겠습니까?')) return;
+    await fetch(`${API}/${id}`, { method: 'DELETE' });
+    fetchTodos();
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    fetchTodos();
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function formatDate(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('ko-KR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  // Enter 키로 추가
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('inp-title').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTodo();
+    });
+    fetchTodos();
+  });
+</script>
+</body>
+</html>
